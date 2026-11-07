@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module AI - Chẩn Đoán & Chấm Phẩm Cấp Mít</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6 border border-slate-200">
+    <div class="flex items-center justify-between border-b pb-4 mb-6">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">🔬</span>
+        <div>
+          <h1 class="text-2xl font-bold text-emerald-700">Module AI - Standalone UI</h1>
+          <p class="text-xs text-slate-500">Chạy độc lập tại cổng 8001 • Task 3.2, 5.2 & 6.2</p>
+        </div>
+      </div>
+      <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-semibold">Service Online</span>
+    </div>
+
+    <!-- Tab chuyển đổi giữa Nhận diện bệnh và Chấm phẩm cấp -->
+    <div class="flex border-b border-slate-200 mb-6">
+      <button id="tab-detect-btn" onclick="switchTab('detect')" class="py-2 px-4 font-semibold text-emerald-600 border-b-2 border-emerald-600">
+        🩺 Nhận Diện Sâu Bệnh (Task 3.2, 5.2)
+      </button>
+      <button id="tab-grade-btn" onclick="switchTab('grade')" class="py-2 px-4 font-semibold text-slate-500 hover:text-emerald-600">
+        🍈 Phân Loại Phẩm Cấp Thu Hoạch (Task 6.2)
+      </button>
+    </div>
+
+    <!-- Khu vực tải ảnh / Chụp ảnh -->
+    <div class="space-y-4">
+      <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition">
+        <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+        <label for="imageInput" class="cursor-pointer flex flex-col items-center">
+          <svg class="w-12 h-12 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span class="text-sm font-medium text-emerald-700">Tải ảnh quả/lá mít hoặc bấm để chụp</span>
+          <span class="text-xs text-slate-400 mt-1">Hỗ trợ JPG, PNG, WEBP</span>
+        </label>
+        <img id="imagePreview" class="hidden max-h-64 mx-auto mt-4 rounded-lg shadow-sm border">
+      </div>
+
+      <div class="flex justify-end space-x-3">
+        <button onclick="runInference()" id="btnAction" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg transition disabled:opacity-50">
+          Chạy Phân Tích AI
+        </button>
+      </div>
+
+      <!-- Khung hiển thị kết quả -->
+      <div id="resultBox" class="hidden mt-6 p-4 rounded-lg border bg-slate-50">
+        <h3 class="font-bold text-slate-700 mb-2">Kết quả phân tích:</h3>
+        <pre id="jsonResult" class="text-xs bg-slate-900 text-emerald-400 p-4 rounded overflow-x-auto"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTab = 'detect';
+    let selectedFile = null;
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const detectBtn = document.getElementById('tab-detect-btn');
+      const gradeBtn = document.getElementById('tab-grade-btn');
+      const actionBtn = document.getElementById('btnAction');
+
+      if (tab === 'detect') {
+        detectBtn.className = "py-2 px-4 font-semibold text-emerald-600 border-b-2 border-emerald-600";
+        gradeBtn.className = "py-2 px-4 font-semibold text-slate-500 hover:text-emerald-600";
+        actionBtn.innerText = "Chạy Nhận Diện Sâu Bệnh";
+      } else {
+        gradeBtn.className = "py-2 px-4 font-semibold text-emerald-600 border-b-2 border-emerald-600";
+        detectBtn.className = "py-2 px-4 font-semibold text-slate-500 hover:text-emerald-600";
+        actionBtn.innerText = "Chạy Phân Loại Phẩm Cấp Trái";
+      }
+      document.getElementById('resultBox').classList.add('hidden');
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const preview = document.getElementById('imagePreview');
+          preview.src = evt.target.result;
+          preview.classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function runInference() {
+      const endpoint = currentTab === 'detect' ? '/api/v1/detect' : '/api/v1/quality-grading';
+      const formData = new FormData();
+      
+      // Nếu chưa chọn ảnh thì tạo 1 ảnh giả lập dạng Blob
+      if (!selectedFile) {
+        const dummyBlob = new Blob(["dummy content"], { type: "image/jpeg" });
+        formData.append("file", dummyBlob, "sample_jackfruit.jpg");
+      } else {
+        formData.append("file", selectedFile);
+      }
+
+      try {
+        const res = await fetch(endpoint, { method: 'POST', body: formData });
+        const data = await res.json();
+        document.getElementById('resultBox').classList.remove('hidden');
+        document.getElementById('jsonResult').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        alert("Lỗi khi kết nối tới AI Service: " + err);
+      }
+    }
+  </script>
+</body>
+</html>

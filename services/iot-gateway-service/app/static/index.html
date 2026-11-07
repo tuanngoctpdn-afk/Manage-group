@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module IoT Gateway - Giám Sát Cảm Biến Thời Gian Thực</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-sky-50 text-slate-800 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6 border border-sky-200">
+    <div class="flex items-center justify-between border-b pb-4 mb-6">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">📡</span>
+        <div>
+          <h1 class="text-2xl font-bold text-sky-700">Module IoT Gateway - Standalone UI</h1>
+          <p class="text-xs text-slate-500">Chạy độc lập tại cổng 8004 • Phục vụ Task 4.1 & 7.2</p>
+        </div>
+      </div>
+      <span class="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-xs font-semibold">MQTT Ingestion Active</span>
+    </div>
+
+    <!-- Chọn vườn mít để xem Telemetry -->
+    <div class="flex items-center space-x-4 mb-6">
+      <label class="font-semibold text-sm">Chọn Vườn Mít:</label>
+      <select id="orchardSelect" onchange="fetchTelemetry()" class="border rounded-lg px-3 py-2 bg-white text-sm">
+        <option value="TG-001">Vườn Tiền Giang (TG-001)</option>
+        <option value="DN-002">Vườn Đồng Nai (DN-002)</option>
+        <option value="DL-003">Vườn Đắk Lắk (DL-003)</option>
+      </select>
+      <button onclick="fetchTelemetry()" class="bg-sky-600 hover:bg-sky-700 text-white text-sm px-4 py-2 rounded-lg">
+        Làm Mới (Refresh)
+      </button>
+    </div>
+
+    <!-- Khối thẻ hiển thị chỉ số cảm biến -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="p-4 rounded-xl bg-orange-50 border border-orange-200 text-center">
+        <span class="text-2xl">🌡️</span>
+        <h4 class="text-xs font-bold text-slate-500 mt-1 uppercase">Nhiệt Độ Không Khí</h4>
+        <div id="valTemp" class="text-3xl font-extrabold text-orange-600 mt-2">-- °C</div>
+        <span class="text-xs text-slate-400">Ngưỡng: 24°C - 35°C</span>
+      </div>
+
+      <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-center">
+        <span class="text-2xl">💧</span>
+        <h4 class="text-xs font-bold text-slate-500 mt-1 uppercase">Độ Ẩm Không Khí</h4>
+        <div id="valAirHumid" class="text-3xl font-extrabold text-blue-600 mt-2">-- %</div>
+        <span class="text-xs text-slate-400">Nguy cơ nấm khi > 85%</span>
+      </div>
+
+      <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+        <span class="text-2xl">🌱</span>
+        <h4 class="text-xs font-bold text-slate-500 mt-1 uppercase">Độ Ẩm Đất</h4>
+        <div id="valSoilMoist" class="text-3xl font-extrabold text-emerald-600 mt-2">-- %</div>
+        <span class="text-xs text-slate-400">Tối ưu cho mít: 60% - 75%</span>
+      </div>
+    </div>
+
+    <!-- Chi tiết gói tin Telemetry Raw -->
+    <div class="p-4 rounded-lg bg-slate-900 text-sky-400 text-xs font-mono">
+      <div class="text-slate-400 font-bold mb-2">// Gói tin MQTT nhận gần nhất từ trạm Edge Node:</div>
+      <pre id="rawTelemetry">Đang tải dữ liệu...</pre>
+    </div>
+  </div>
+
+  <script>
+    async function fetchTelemetry() {
+      const orchardId = document.getElementById('orchardSelect').value;
+      try {
+        const res = await fetch(`/api/v1/telemetry/${orchardId}`);
+        const data = await res.json();
+        
+        document.getElementById('valTemp').innerText = `${data.temperature_celsius} °C`;
+        document.getElementById('valAirHumid').innerText = `${data.air_humidity_percent} %`;
+        document.getElementById('valSoilMoist').innerText = `${data.soil_moisture_percent} %`;
+        document.getElementById('rawTelemetry').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        alert("Lỗi kết nối tới IoT Gateway: " + err);
+      }
+    }
+
+    // Tự động load khi mở trang
+    fetchTelemetry();
+  </script>
+</body>
+</html>

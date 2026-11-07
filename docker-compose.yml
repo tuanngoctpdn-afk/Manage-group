@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # 1. Message Broker tiếp nhận dữ liệu IoT vườn mít (Task 4.1, 7.2)
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: village_mqtt_broker
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: always
+
+  # 2. Cơ sở dữ liệu quan hệ lưu trữ nông hộ, vườn mít, nhật ký bệnh
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: village_postgres
+    environment:
+      POSTGRES_USER: village_admin
+      POSTGRES_PASSWORD: village_secret_password
+      POSTGRES_DB: village_jackfruit_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # 3. AI Inference Microservice (Task 3.2, 5.2, 6.2)
+  ai-service:
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+    container_name: village_ai_service
+    ports:
+      - "8001:8001"
+    restart: always
+
+  # 4. Smart Agricultural Recommendation Microservice (Task 6.1)
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: services/recommendation-service/Dockerfile
+    container_name: village_recommendation_service
+    ports:
+      - "8002:8002"
+    restart: always
+
+  # 5. Core Orchard & Disease Map Microservice (Task 7.1, 7.2)
+  core-api-service:
+    build:
+      context: .
+      dockerfile: services/core-api-service/Dockerfile
+    container_name: village_core_api_service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql://village_admin:village_secret_password@postgres-db:5432/village_jackfruit_db
+    depends_on:
+      - postgres-db
+    restart: always
+
+  # 6. IoT Gateway & Ingestion Microservice (Task 4.1)
+  iot-gateway-service:
+    build:
+      context: .
+      dockerfile: services/iot-gateway-service/Dockerfile
+    container_name: village_iot_gateway_service
+    ports:
+      - "8004:8004"
+    environment:
+      MQTT_BROKER_HOST: mqtt-broker
+      MQTT_BROKER_PORT: 1883
+    depends_on:
+      - mqtt-broker
+    restart: always
+
+volumes:
+  postgres_data:
+

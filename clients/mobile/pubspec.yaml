@@ -1,0 +1,29 @@
+name: village_jackfruit_scanner
+description: "Ứng dụng di động chẩn đoán sâu bệnh cây mít thời gian thực cho bà con nông dân (Android/iOS)"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  camera: ^0.10.5+9
+  tflite_flutter: ^0.10.4
+  http: ^1.2.0
+  image_picker: ^1.0.7
+  provider: ^6.1.1
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/models/jackfruit_model_int8.tflite
+    - assets/labels.txt
+

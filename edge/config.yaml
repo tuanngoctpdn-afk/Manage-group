@@ -1,0 +1,8 @@
+device_id: "edge-jetson-orchard-01"
+orchard_id: "TG-001"
+mqtt_broker: "localhost"
+mqtt_port: 1883
+sensor_interval_sec: 10
+camera_source: 0 # 0: USB WebCam, hoặc rtsp://...
+confidence_threshold: 0.75
+
